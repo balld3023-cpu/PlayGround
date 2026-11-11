@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#090b0f" />
+<meta name="description" content="BLAZE ROYALE — a 3D battle royale shooter built for desktop and Android." />
+<title>BLAZE ROYALE — Survive the Firestorm</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M34 4c3 14-9 17-9 28 0 5 3 8 7 8 5 0 8-4 8-10 6 6 10 13 10 20 0 8-8 12-18 12S12 56 12 45c0-17 17-23 22-41z' fill='%23ff7a1a'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+<svg id="sprite" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11.2 12 4l9 7.2V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/></symbol>
+  <symbol id="i-gun" viewBox="0 0 24 24"><path d="M2 9h13l3 3h4v3h-7l-3 2H8v-3H5l-3 2z"/><path d="M8 9V6h5v3"/></symbol>
+  <symbol id="i-map" viewBox="0 0 24 24"><path d="m3 6 6-2 6 2 6-2v14l-6 2-6-2-6 2z"/><path d="M9 4v14M15 6v14"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1 1.55V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.11-1.55 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.55-1H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.9a1.7 1.7 0 0 0-.34-1.88l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 8.97 4.5H9a1.7 1.7 0 0 0 1-1.55V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1 1.55 1.7 1.7 0 0 0 1.88-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.88V9a1.7 1.7 0 0 0 1.55 1H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1z"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5 20 12 7 19.5z"/></symbol>
+  <symbol id="i-coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.2c0-1.2 1-2.2 2.5-2.2s2.5.7 2.5 1.8c0 2.6-5 1.5-5 4.2 0 1.1 1 1.8 2.5 1.8s2.5-1 2.5-2.2"/></symbol>
+  <symbol id="i-diamond" viewBox="0 0 24 24"><path d="m12 2 7 6-7 14L5 8z"/><path d="M2.5 8h19M12 2v20"/></symbol>
+  <symbol id="i-sound" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9a4 4 0 0 1 0 6M19.5 6.5a8 8 0 0 1 0 11"/></symbol>
+  <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="m17 9 5 6M22 9l-5 6"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="m5 5 14 14M19 5 5 19"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 2 20 5v6c0 5.5-3.6 9.4-8 11-4.4-1.6-8-5.5-8-11V5z"/><path d="m8.5 11.5 2.5 2.5 4.5-5"/></symbol>
+  <symbol id="i-med" viewBox="0 0 24 24"><path d="M8 3h8v5h5v8h-5v5H8v-5H3V8h5z"/></symbol>
+  <symbol id="i-reload" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 6.7"/><path d="M20 4v7h-7"/></symbol>
+  <symbol id="i-jump" viewBox="0 0 24 24"><path d="M12 20V5M6 11l6-6 6 6"/><path d="M5 21h14"/></symbol>
+  <symbol id="i-crouch" viewBox="0 0 24 24"><circle cx="13" cy="5" r="2.4"/><path d="M13 8v5l4 3M13 10l-4 2-2 5M13 13l-4 4-2 2M11 20h8"/></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24"><path d="M3 15 5 9h14l2 6v3h-3M6 18H3v-3h15v3h-3"/><circle cx="7.5" cy="18" r="2"/><circle cx="16.5" cy="18" r="2"/><path d="M8 9l1-3h6l1 3"/></symbol>
+  <symbol id="i-backpack" viewBox="0 0 24 24"><path d="M7 8V6a5 5 0 0 1 10 0v2"/><rect x="5" y="8" width="14" height="13" rx="3"/><path d="M9 13h6M9 17h6"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 3h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H3v2a4 4 0 0 0 4 4M17 5h4v2a4 4 0 0 1-4 4M12 13v5M8 21h8M9 18h6"/></symbol>
+  <symbol id="i-skull" viewBox="0 0 24 24"><path d="M5 11a7 7 0 1 1 14 0v4l-2 2v4H7v-4l-2-2z"/><circle cx="9" cy="11" r="1.4"/><circle cx="15" cy="11" r="1.4"/><path d="M10 17v3M14 17v3"/></symbol>
+  <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2 8.5a15 15 0 0 1 20 0M5.5 12.5a10 10 0 0 1 13 0M9 16.5a5 5 0 0 1 6 0"/><circle cx="12" cy="20" r="1"/></symbol>
+  <symbol id="i-friends" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.4"/><path d="M2.5 20c0-3.8 2.9-6 6.5-6s6.5 2.2 6.5 6"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 14.4c2.6.5 4 2.3 4 5.1"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m4 12.5 5 5L20 6.5"/></symbol>
+  <symbol id="i-scope" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="1.2"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+</svg>
+
+<div id="app">
+  <canvas id="stage"></canvas>
+  <div id="vignette" aria-hidden="true"></div>
+
+  <!-- ============================= LOBBY ============================= -->
+  <div id="lobby" class="ui-layer">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark"><svg viewBox="0 0 64 64"><path d="M34 4c3 14-9 17-9 28 0 5 3 8 7 8 5 0 8-4 8-10 6 6 10 13 10 20 0 8-8 12-18 12S12 56 12 45c0-17 17-23 22-41z"/></svg></div>
+        <div class="brand-type"><span class="brand-main">BLAZE</span><span class="brand-sub">ROYALE</span></div>
+      </div>
+      <div class="season-chip"><span class="dot"></span>SEASON 4 · FIRESTORM<span class="season-time">12D 08H</span></div>
+      <div class="top-actions">
+        <button class="currency" id="btn-coins" aria-label="Coins"><svg class="icon"><use href="#i-coin"/></svg><span id="coin-count">12,450</span><b>+</b></button>
+        <button class="currency" id="btn-gems" aria-label="Diamonds"><svg class="icon"><use href="#i-diamond"/></svg><span id="gem-count">860</span><b>+</b></button>
+        <button class="icon-btn" id="btn-sound" aria-label="Toggle sound"><svg class="icon"><use href="#i-sound"/></svg></button>
+        <button class="icon-btn" id="btn-settings" aria-label="Settings"><svg class="icon"><use href="#i-settings"/></svg></button>
+      </div>
+    </header>
+
+    <main class="lobby-main">
+      <aside class="profile-card panel-glass">
+        <div class="profile-top">
+          <div class="rank-emblem"><span>IV</span><i>GOLD</i></div>
+          <div class="profile-id">
+            <div class="profile-name"><span id="lobby-name">PHANTOM</span><svg class="icon verified"><use href="#i-check"/></svg></div>
+            <div class="profile-sub">LVL <b id="lobby-level">42</b> · <span id="lobby-rank">HEROIC</span></div>
+          </div>
+        </div>
+        <div class="xp-track"><div class="xp-fill" id="xp-fill" style="width:64%"></div><span id="xp-label">6,420 / 10,000 XP</span></div>
+        <div class="profile-stats">
+          <div><b id="stat-matches">248</b><span>MATCHES</span></div>
+          <div><b id="stat-wins">37</b><span>WINS</span></div>
+          <div><b id="stat-kd">3.42</b><span>K/D</span></div>
+        </div>
+        <div class="friends">
+          <div class="friends-head"><span><svg class="icon"><use href="#i-friends"/></svg> SQUAD</span><i class="online-dot"></i><span class="friends-online">3 ONLINE</span></div>
+          <div class="friend-row"><span class="avatar av1">R</span><span>RIFT<span class="friend-status">In lobby</span></span><button class="mini-btn" data-invite="RIFT">INVITE</button></div>
+          <div class="friend-row"><span class="avatar av2">K</span><span>KIRO<span class="friend-status">In match</span></span><button class="mini-btn" data-invite="KIRO">INVITE</button></div>
+          <div class="friend-row"><span class="avatar av3">N</span><span>NOVA<span class="friend-status">In lobby</span></span><button class="mini-btn" data-invite="NOVA">INVITE</button></div>
+        </div>
+      </aside>
+
+      <div class="character-stage" aria-hidden="true">
+        <div class="stage-tag"><span class="stage-line"></span><b id="stage-name">PHANTOM</b><i>STREET VIPER</i></div>
+      </div>
+
+      <aside class="play-panel">
+        <div class="panel-tabs" id="panel-tabs">
+          <button class="ptab active" data-tab="home">HOME</button>
+          <button class="ptab" data-tab="character">CHARACTER</button>
+          <button class="ptab" data-tab="loadout">LOADOUT</button>
+          <button class="ptab" data-tab="maps">MAPS</button>
+        </div>
+
+        <!-- HOME -->
+        <section class="tab-pane active" id="tab-home">
+          <div class="mode-row" id="mode-row">
+            <button class="mode-card active" data-mode="br">
+              <span class="mode-ico"><svg class="icon"><use href="#i-flag"/></svg></span>
+              <span class="mode-txt"><b>BATTLE ROYALE</b><i>50 PLAYERS · SOLO</i></span>
+              <span class="mode-check"><svg class="icon"><use href="#i-check"/></svg></span>
+            </button>
+            <button class="mode-card" data-mode="tdm">
+              <span class="mode-ico"><svg class="icon"><use href="#i-friends"/></svg></span>
+              <span class="mode-txt"><b>CLASH 5v5</b><i>FIRST TO 30 KILLS</i></span>
+              <span class="mode-check"><svg class="icon"><use href="#i-check"/></svg></span>
+            </button>
+            <button class="mode-card" data-mode="training">
+              <span class="mode-ico"><svg class="icon"><use href="#i-scope"/></svg></span>
+              <span class="mode-txt"><b>TRAINING</b><i>RANGE · UNLIMITED AMMO</i></span>
+              <span class="mode-check"><svg class="icon"><use href="#i-check"/></svg></span>
+            </button>
+          </div>
+
+          <div class="section-head"><span>SELECT DROP ZONE</span><button class="link-btn" data-tab-jump="maps">ALL MAPS <svg class="icon"><use href="#i-arrow"/></svg></button></div>
+          <div class="map-strip" id="map-strip"></div>
+
+          <div class="match-info" id="match-info">
+            <div class="mi-left">
+              <span class="live-dot"></span>
+              <div><b id="mi-map">BERMUDA BAY</b><span id="mi-detail">Solo · 50 players · Ranked</span></div>
+            </div>
+            <div class="mi-right"><svg class="icon"><use href="#i-wifi"/></svg><span>24ms</span><i>EU-WEST</i></div>
+          </div>
+
+          <button class="deploy-btn" id="btn-play">
+            <span class="deploy-glow"></span>
+            <span class="deploy-icon"><svg class="icon"><use href="#i-play"/></svg></span>
+            <span class="deploy-label"><b>DEPLOY</b><i id="deploy-sub">SOLO · BERMUDA BAY</i></span>
+            <span class="deploy-arrow"><svg class="icon"><use href="#i-arrow"/></svg></span>
+          </button>
+
+          <div class="mission-row">
+            <div class="mission-ico"><svg class="icon"><use href="#i-trophy"/></svg></div>
+            <div class="mission-body"><div class="mission-title">SEASON MISSIONS <span>2 / 5</span></div><div class="mission-track"><i style="width:40%"></i></div></div>
+            <button class="mini-btn ghost" id="btn-missions">VIEW</button>
+          </div>
+        </section>
+
+        <!-- CHARACTER -->
+        <section class="tab-pane" id="tab-character">
+          <div class="pane-title"><h2>CHARACTER</h2><span class="pane-sub">CUSTOMIZE YOUR OPERATOR</span></div>
+          <div class="sub-tabs" id="char-tabs">
+            <button class="stab active" data-cat="outfit">OUTFIT</button>
+            <button class="stab" data-cat="helmet">HEADGEAR</button>
+            <button class="stab" data-cat="backpack">BACKPACK</button>
+            <button class="stab" data-cat="skin">SKIN</button>
+          </div>
+          <div class="item-grid" id="char-items"></div>
+          <div class="char-footer">
+            <div class="char-loadout-mini"><span>PRIMARY</span><b id="char-primary">VANGUARD AR</b></div>
+            <button class="solid-btn" id="btn-randomize">RANDOMIZE</button>
+          </div>
+        </section>
+
+        <!-- LOADOUT -->
+        <section class="tab-pane" id="tab-loadout">
+          <div class="pane-title"><h2>LOADOUT</h2><span class="pane-sub">PICK YOUR FIREPOWER</span></div>
+          <div class="slot-summary">
+            <button class="slot-card" data-slot="primary">
+              <span class="slot-tag">PRIMARY</span>
+              <span class="slot-weapon"><svg class="icon weapon-icon"><use href="#i-gun"/></svg><b id="slot-primary">VANGUARD AR</b></span>
+            </button>
+            <button class="slot-card" data-slot="secondary">
+              <span class="slot-tag">SIDEARM</span>
+              <span class="slot-weapon"><svg class="icon weapon-icon"><use href="#i-gun"/></svg><b id="slot-secondary">P92 SIDEARM</b></span>
+            </button>
+          </div>
+          <div class="weapon-list" id="weapon-list"></div>
+          <div class="weapon-stats" id="weapon-stats">
+            <div class="ws-head"><b>VANGUARD AR</b><span>ASSAULT RIFLE</span></div>
+            <div class="ws-bars">
+              <div><span>DAMAGE</span><i><b style="width:68%"></b></i><em>68</em></div>
+              <div><span>FIRE RATE</span><i><b style="width:62%"></b></i><em>62</em></div>
+              <div><span>ACCURACY</span><i><b style="width:74%"></b></i><em>74</em></div>
+              <div><span>RANGE</span><i><b style="width:80%"></b></i><em>80</em></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- MAPS -->
+        <section class="tab-pane" id="tab-maps">
+          <div class="pane-title"><h2>BATTLEGROUNDS</h2><span class="pane-sub">THREE ARENAS. ONE SURVIVOR.</span></div>
+          <div class="map-list" id="map-list"></div>
+        </section>
+      </aside>
+
+      <div class="hero-meta">
+        <div class="hero-tags"><span>OPERATOR</span><span id="hero-outfit">STREET VIPER</span></div>
+        <h1 id="hero-name">PHANTOM</h1>
+        <div class="hero-meta-sub"><span class="lvl">LVL <b id="hero-level">42</b></span><span class="sep"></span><span id="hero-rank">HEROIC IV</span><span class="sep"></span><span>EU-WEST</span></div>
+        <div class="hero-hint"><span class="mouse-hint"></span> DRAG TO ROTATE OPERATOR</div>
+      </div>
+    </main>
+
+    <nav class="dock">
+      <button class="dock-btn active" data-tab="home"><svg class="icon"><use href="#i-home"/></svg><span>HOME</span></button>
+      <button class="dock-btn" data-tab="character"><svg class="icon"><use href="#i-user"/></svg><span>OPERATOR</span></button>
+      <button class="dock-btn" data-tab="loadout"><svg class="icon"><use href="#i-gun"/></svg><span>LOADOUT</span></button>
+      <button class="dock-btn" data-tab="maps"><svg class="icon"><use href="#i-map"/></svg><span>MAPS</span></button>
+      <button class="dock-btn" data-action="settings"><svg class="icon"><use href="#i-settings"/></svg><span>SETTINGS</span></button>
+    </nav>
+    <div class="lobby-foot">BLAZE ENGINE 3.2 · BUILD 4.20.1 · <span id="fps-lobby">60</span> FPS</div>
+  </div>
+
+  <!-- ============================= HUD ============================= -->
+  <div id="hud" class="ui-layer hidden">
+    <div class="hud-top">
+      <div class="match-pill">
+        <div class="mp-item"><span class="mp-label">ALIVE</span><b id="hud-alive">50</b></div>
+        <div class="mp-sep"></div>
+        <div class="mp-item"><span class="mp-label">KILLS</span><b id="hud-kills">0</b></div>
+        <div class="mp-sep"></div>
+        <div class="mp-item"><span class="mp-label">SQUAD</span><b id="hud-squad">1</b></div>
+      </div>
+      <div class="compass-wrap">
+        <div class="compass" id="compass"><div class="compass-strip" id="compass-strip"></div><div class="compass-needle"></div></div>
+        <div class="zone-bar" id="zone-bar">
+          <svg class="icon"><use href="#i-shield"/></svg>
+          <span id="zone-label">ZONE CLOSING IN</span>
+          <b id="zone-timer">00:45</b>
+        </div>
+      </div>
+      <div class="minimap-wrap">
+        <div class="minimap-frame">
+          <canvas id="minimap" width="360" height="360"></canvas>
+          <div class="mm-coords" id="mm-coords">GRID 24·61</div>
+          <div class="mm-north">N</div>
+        </div>
+        <div class="mm-zone" id="mm-zone"><i></i><span id="mm-zone-txt">SAFE · 1.2 KM</span></div>
+      </div>
+    </div>
+
+    <div id="killfeed"></div>
+    <div id="objective">
+      <span class="obj-label" id="obj-label">BATTLE ROYALE</span>
+      <b id="obj-main">SURVIVE THE FIRESTORM</b>
+      <span class="obj-score hidden" id="obj-score">0 <i>—</i> 0</span>
+    </div>
+    <div id="event-banner"><span class="eb-line"></span><b id="eb-title">AIRDROP INBOUND</b><i id="eb-sub">LEGENDARY CRATE DETECTED</i></div>
+
+    <div id="crosshair">
+      <div class="ch ch-t"></div><div class="ch ch-b"></div><div class="ch ch-l"></div><div class="ch ch-r"></div><div class="ch-dot"></div>
+      <div id="hitmarker"><i></i><i></i><i></i><i></i></div>
+    </div>
+    <div id="dmg-layer"></div>
+    <div id="scope-overlay" class="hidden"><div class="scope-lens"><div class="scope-cross"></div><div class="scope-rings"></div></div><div class="scope-black"></div></div>
+    <div id="damage-vignette"></div>
+    <div id="hit-flash"></div>
+
+    <div class="hud-bottom">
+      <div class="vitals">
+        <div class="vital-avatar"><span id="hud-initial">P</span><i class="vital-lvl" id="hud-lvl">42</i></div>
+        <div class="vital-main">
+          <div class="vital-name"><b id="hud-name">PHANTOM</b><span id="hud-team-tag">SOLO</span></div>
+          <div class="bar hp"><div class="bar-fill" id="hp-fill" style="width:100%"></div><span id="hp-text">100</span><i class="bar-ghost" id="hp-ghost"></i></div>
+          <div class="bar armor"><div class="bar-fill" id="armor-fill" style="width:0%"></div><span id="armor-text">0</span><i class="bar-ghost"></i></div>
+        </div>
+      </div>
+      <div class="quick-slots">
+        <button class="quick" id="quick-med"><svg class="icon"><use href="#i-med"/></svg><b id="med-count">2</b><span>H</span></button>
+        <button class="quick" id="quick-shield"><svg class="icon"><use href="#i-shield"/></svg><b id="shield-count">1</b><span>J</span></button>
+      </div>
+      <div class="ammo-panel">
+        <div class="ammo-top"><span id="weapon-label">VANGUARD AR</span><i id="fire-mode">AUTO</i></div>
+        <div class="ammo-main"><b id="ammo-mag">30</b><span>/ <i id="ammo-reserve">150</i></span></div>
+        <div class="reload-track" id="reload-track"><i></i></div>
+        <div class="weapon-slots">
+          <button class="wslot active" data-slot="0"><span>1</span><i id="wslot-0">AR</i></button>
+          <button class="wslot" data-slot="1"><span>2</span><i id="wslot-1">PST</i></button>
+          <button class="wslot" data-slot="2"><span>3</span><i id="wslot-2">—</i></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="interact-hint" class="hidden"><kbd id="interact-key">F</kbd><span id="interact-text">ENTER VEHICLE</span></div>
+    <div id="pickup-toast"></div>
+    <div id="vehicle-hud" class="hidden">
+      <div class="vh-speed"><b id="vh-speed">0</b><span>KM/H</span></div>
+      <div class="vh-detail"><div class="vh-bar"><i id="vh-health"></i></div><span>VEHICLE INTEGRITY</span></div>
+      <button class="vh-exit" id="vh-exit">EXIT <kbd>F</kbd></button>
+    </div>
+
+    <div id="drop-ui" class="hidden">
+      <div class="drop-top"><span class="drop-label">DEPLOYING</span><b id="drop-alt">140<small>M</small></b></div>
+      <div class="drop-track"><i id="drop-progress"></i></div>
+      <div class="drop-hint" id="drop-hint">STEER WITH <kbd>WASD</kbd> · HOLD <kbd>SHIFT</kbd> TO DIVE</div>
+      <button class="drop-skip" id="drop-skip">SKIP <svg class="icon"><use href="#i-arrow"/></svg></button>
+      <div class="drop-target"><svg class="icon"><use href="#i-map"/></svg><span id="drop-target">BERMUDA BAY</span></div>
+    </div>
+
+    <div id="match-intro" class="hidden">
+      <div class="mi-bg"></div>
+      <div class="mi-content">
+        <span class="mi-kicker">MATCH FOUND</span>
+        <h2 id="mi-mode">BATTLE ROYALE</h2>
+        <div class="mi-map" id="mi-mapname">BERMUDA BAY</div>
+        <div class="mi-grid"><div><b>50</b><span>PLAYERS</span></div><div><b>SOLO</b><span>MODE</span></div><div><b>RANKED</b><span>QUEUE</span></div></div>
+        <div class="mi-loading"><i></i></div>
+      </div>
+    </div>
+
+    <div id="scoreboard" class="hidden">
+      <div class="sb-head"><h3>LIVE STANDINGS</h3><span id="sb-alive">50 ALIVE</span></div>
+      <div class="sb-cols"><span>#</span><span>PLAYER</span><span>KILLS</span><span>DMG</span></div>
+      <div id="sb-rows"></div>
+      <div class="sb-foot">TAB TO CLOSE · RANKED SOLO</div>
+    </div>
+
+    <div id="pause" class="hidden">
+      <div class="pause-card panel-glass">
+        <div class="pane-title"><h2>PAUSED</h2><span class="pane-sub">MATCH IN PROGRESS</span></div>
+        <button class="solid-btn wide" id="btn-resume">RESUME</button>
+        <button class="ghost-btn wide" id="btn-pause-settings">SETTINGS</button>
+        <button class="ghost-btn wide danger" id="btn-leave">LEAVE MATCH</button>
+        <div class="pause-tip">TIP · HOLD <kbd>SHIFT</kbd> TO SPRINT · CROUCH FOR ACCURACY</div>
+      </div>
+    </div>
+
+    <div id="touch-ui" class="hidden">
+      <div id="stick-zone"><div class="stick-base" id="stick-base"><div class="stick-knob" id="stick-knob"></div></div></div>
+      <div class="aim-hint">DRAG TO AIM</div>
+      <button class="tbtn menu" id="t-menu" aria-label="Pause"><svg class="icon"><use href="#i-pause"/></svg></button>
+      <button class="tbtn fire" id="t-fire"><svg class="icon"><use href="#i-gun"/></svg><span>FIRE</span></button>
+      <button class="tbtn ads" id="t-ads"><svg class="icon"><use href="#i-scope"/></svg></button>
+      <button class="tbtn jump" id="t-jump"><svg class="icon"><use href="#i-jump"/></svg></button>
+      <button class="tbtn crouch" id="t-crouch"><svg class="icon"><use href="#i-crouch"/></svg></button>
+      <button class="tbtn reload" id="t-reload"><svg class="icon"><use href="#i-reload"/></svg></button>
+      <button class="tbtn swap" id="t-swap"><svg class="icon"><use href="#i-gun"/></svg><b>SWAP</b></button>
+      <button class="tbtn interact hidden" id="t-interact">ENTER</button>
+      <button class="tbtn sprint" id="t-sprint">SPRINT</button>
+    </div>
+
+    <div id="fps-hud">60 FPS</div>
+  </div>
+
+  <!-- ============================= RESULTS ============================= -->
+  <div id="results" class="ui-layer hidden">
+    <div class="result-bg"></div>
+    <div class="result-card">
+      <div class="result-kicker" id="result-kicker">BATTLE ROYALE</div>
+      <h1 id="result-title">BLAZE VICTORY</h1>
+      <div class="result-place" id="result-place"><b>#1</b><span>OUT OF 50</span></div>
+      <div class="result-stats">
+        <div><b id="rs-kills">0</b><span>KILLS</span></div>
+        <div><b id="rs-damage">0</b><span>DAMAGE</span></div>
+        <div><b id="rs-time">0:00</b><span>SURVIVED</span></div>
+        <div><b id="rs-acc">0%</b><span>ACCURACY</span></div>
+      </div>
+      <div class="reward-row">
+        <div class="reward"><svg class="icon"><use href="#i-coin"/></svg><b id="reward-coins">+540</b><span>COINS</span></div>
+        <div class="reward"><svg class="icon"><use href="#i-trophy"/></svg><b id="reward-xp">+1,240</b><span>XP</span></div>
+        <div class="reward"><svg class="icon"><use href="#i-skull"/></svg><b id="reward-kills">+8</b><span>RANK PTS</span></div>
+      </div>
+      <div class="result-actions">
+        <button class="solid-btn" id="btn-again"><svg class="icon"><use href="#i-reload"/></svg> PLAY AGAIN</button>
+        <button class="ghost-btn" id="btn-lobby">RETURN TO LOBBY</button>
+      </div>
+      <div class="result-foot">BLAZE ROYALE · SEASON 4 · <span id="result-map">BERMUDA BAY</span></div>
+    </div>
+  </div>
+
+  <!-- ============================= LOADING ============================= -->
+  <div id="loading">
+    <div class="load-noise"></div>
+    <div class="load-center">
+      <div class="load-mark"><svg viewBox="0 0 64 64"><path d="M34 4c3 14-9 17-9 28 0 5 3 8 7 8 5 0 8-4 8-10 6 6 10 13 10 20 0 8-8 12-18 12S12 56 12 45c0-17 17-23 22-41z"/></svg></div>
+      <h1 class="load-title">BLAZE<span>ROYALE</span></h1>
+      <div class="load-sub">SURVIVE THE FIRESTORM</div>
+      <div class="load-track"><i id="load-fill"></i></div>
+      <div class="load-row"><span id="load-status">INITIALIZING BLAZE ENGINE</span><b id="load-pct">0%</b></div>
+    </div>
+    <div class="load-tip">TIP · LOOT ARMOR EARLY. IT ABSORBS DAMAGE BEFORE YOUR HEALTH.</div>
+    <div class="load-version">ENGINE 3.2 · BUILD 4.20.1 · <span>ANDROID OPTIMIZED</span></div>
+  </div>
+
+  <!-- Modals -->
+  <div id="modal" class="hidden">
+    <div class="modal-backdrop"></div>
+    <div class="modal-card panel-glass" id="modal-card"></div>
+  </div>
+  <div id="toast-wrap"></div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js" } }
+</script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
