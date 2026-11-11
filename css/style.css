@@ -755,3 +755,129 @@ body.touch #look-zone{pointer-events:auto}
   .hero-hint{display:none}
   .tab-pane::-webkit-scrollbar{width:2px}
 }
+
+/* ==================== OPERATOR + LOOT UI (V2) ==================== */
+/* character > operator cards */
+.operator-swatch{
+  height:64px;background:
+    radial-gradient(ellipse at 50% 32%,color-mix(in srgb,var(--op) 34%,transparent),transparent 62%),
+    linear-gradient(160deg,#161f28,#080c11);
+}
+.operator-swatch .op-figure{position:relative;width:28px;height:40px;display:block;filter:drop-shadow(0 5px 9px rgba(0,0,0,.55))}
+.operator-swatch .op-figure::before{content:'';position:absolute;left:50%;top:0;width:13px;height:13px;border-radius:50%;background:var(--op);transform:translateX(-50%)}
+.operator-swatch .op-figure::after{content:'';position:absolute;left:50%;top:12px;width:24px;height:27px;background:linear-gradient(180deg,var(--op),#0c1218 78%);clip-path:polygon(17% 0,83% 0,100% 100%,0 100%);transform:translateX(-50%)}
+.operator-swatch .op-figure i{position:absolute;left:50%;top:18px;width:3px;height:13px;background:#080c11;transform:translateX(-50%);z-index:1;opacity:.72}
+.operator-swatch b{position:absolute;left:4px;top:3px;z-index:2;font-size:5px;font-weight:600;letter-spacing:.11em;color:var(--op);border:1px solid color-mix(in srgb,var(--op) 45%,transparent);background:rgba(6,10,14,.55);padding:1px 3px}
+.operator-card.active .operator-swatch{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--op) 55%,transparent)}
+.operator-card.active{border-color:color-mix(in srgb,var(--op,var(--orange)) 65%,transparent)}
+
+#operator-details{margin-top:9px}
+.operator-details{border:1px solid var(--line);border-left:2px solid var(--op);background:linear-gradient(150deg,color-mix(in srgb,var(--op) 10%,rgba(255,255,255,.02)),rgba(0,0,0,.24));padding:9px 10px;position:relative;overflow:hidden}
+.operator-details::after{content:'';position:absolute;right:-28px;top:-42px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--op) 20%,transparent),transparent 68%);pointer-events:none}
+.op-head{display:flex;align-items:center;gap:8px;position:relative;z-index:1}
+.op-emblem{width:32px;height:32px;flex:none;display:grid;place-items:center;border-radius:50%;color:var(--op);border:1px solid color-mix(in srgb,var(--op) 45%,transparent);background:color-mix(in srgb,var(--op) 12%,rgba(0,0,0,.35));box-shadow:0 0 16px color-mix(in srgb,var(--op) 22%,transparent)}
+.op-emblem .icon{width:16px;height:16px}
+.op-head>div{display:flex;flex-direction:column;gap:1px;min-width:0}
+.op-head b{font-size:12px;letter-spacing:.14em;font-style:italic}
+.op-head span{font-size:6px;letter-spacing:.16em;color:var(--op)}
+.op-head i{font-style:normal;font-size:6.5px;letter-spacing:.04em;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.op-live{margin-left:auto;align-self:flex-start;font-size:5.5px;letter-spacing:.13em;color:var(--op);border:1px solid color-mix(in srgb,var(--op) 38%,transparent);padding:2px 4px;white-space:nowrap}
+.op-body{display:grid;grid-template-columns:1fr 1.25fr;gap:11px;margin-top:9px;position:relative;z-index:1}
+.op-stats{display:flex;flex-direction:column;gap:4px}
+.op-stat{display:grid;grid-template-columns:42px 1fr 30px;align-items:center;gap:5px}
+.op-stat span{font-size:5.5px;letter-spacing:.12em;color:var(--muted)}
+.op-stat i{height:3px;background:rgba(255,255,255,.09);display:block}
+.op-stat i b{display:block;height:100%;box-shadow:0 0 7px currentColor}
+.op-stat em{font-style:normal;font-family:var(--num);font-size:8px;text-align:right;color:#c5d0d9}
+.op-skills{display:flex;flex-direction:column;gap:5px}
+.op-skill{display:flex;gap:7px;padding:5px 6px;background:rgba(255,255,255,.025);border-left:2px solid var(--op)}
+.op-skill.passive-skill{border-left-color:var(--teal)}
+.skill-key{width:19px;height:19px;flex:none;display:grid;place-items:center;font-family:var(--num);font-size:8px;font-weight:700;color:#0b0e12;background:var(--op);border-radius:50%}
+.passive-skill .skill-key{background:rgba(37,221,195,.18);color:var(--teal);border:1px solid rgba(37,221,195,.42)}
+.skill-key .icon{width:10px;height:10px}
+.op-skill>div{display:flex;flex-direction:column;gap:1px;min-width:0}
+.op-skill b{font-size:7px;letter-spacing:.11em}
+.op-skill span{font-size:5.5px;letter-spacing:.12em;color:var(--op)}
+.passive-skill span{color:var(--teal)}
+.op-skill i{font-style:normal;font-size:6px;line-height:1.35;color:var(--muted)}
+.op-skill .icon{flex:none}
+
+/* HUD: operator tag + four quick items */
+.op-tag{color:var(--orange)!important;border-color:rgba(255,122,26,.34)!important}
+.quick.bandage .icon{color:#9de6b7}
+.quick.trauma .icon{color:#ffd166}
+.quick.empty{opacity:.38;filter:grayscale(.8)}
+.quick.empty:hover{opacity:.55}
+
+/* HUD: typed ammo + rarity + med channel + attachments */
+#ammo-type{color:var(--gold);font-size:6px;letter-spacing:.14em;font-family:var(--num)}
+#weapon-rarity{color:var(--orange);border:1px solid rgba(255,122,26,.3);padding:1px 4px;font-size:5.5px;letter-spacing:.1em}
+#weapon-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.heal-track{height:3px;position:relative;background:rgba(255,255,255,.1);margin:4px 0 5px;overflow:visible;opacity:0;transition:opacity .12s}
+.heal-track.active{opacity:1}
+.heal-track i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2fbd86,#8ef5c4);box-shadow:0 0 8px rgba(82,230,160,.5)}
+.heal-track.shield i{background:linear-gradient(90deg,#1a7ba8,#4fd8ff);box-shadow:0 0 8px rgba(79,216,255,.5)}
+.heal-track span{position:absolute;right:0;top:-10px;font-size:5.5px;letter-spacing:.14em;color:#9de6b7;text-shadow:0 1px 3px #000}
+.heal-track.shield span{color:#8fe7ff}
+.attachment-row{display:flex;justify-content:flex-end;align-items:center;gap:3px;margin:1px 0 5px;min-height:9px;font-size:5.5px}
+.attachment-row span{padding:1px 3px;border:1px solid rgba(255,255,255,.14);color:#a9b7c1;letter-spacing:.09em;background:rgba(0,0,0,.24)}
+.attachment-row em{font-style:normal;font-family:var(--num);font-size:6.5px;color:var(--muted-2);margin-left:3px}
+
+/* HUD: operator ability panel */
+#ability-panel{position:absolute;right:226px;bottom:calc(20px + var(--safe-b));display:flex;align-items:center;gap:9px;pointer-events:none;z-index:5}
+.ability-btn{--ab-color:var(--orange);--cd:360deg;width:54px;height:54px;position:relative;flex:none;display:grid;place-items:center;pointer-events:auto;border-radius:50%;background:rgba(8,12,17,.72);border:1px solid rgba(255,255,255,.14);transition:transform .12s,border-color .2s,box-shadow .2s}
+.ability-btn:hover{transform:translateY(-1px)}
+.ability-btn:active{transform:scale(.95)}
+.ability-btn.ready{border-color:color-mix(in srgb,var(--ab-color) 52%,transparent);box-shadow:0 0 18px color-mix(in srgb,var(--ab-color) 25%,transparent)}
+.ability-btn.active{box-shadow:0 0 24px color-mix(in srgb,var(--ab-color) 55%,transparent);animation:abilityPulse 1.1s infinite}
+.ability-btn.cooling{opacity:.82}
+.ability-btn.flash{animation:abilityFlash .5s ease}
+.ab-ring{position:absolute;inset:-2px;border-radius:50%;background:conic-gradient(var(--ab-color) var(--cd),rgba(255,255,255,.1) 0);transform:rotate(-90deg);transition:background .2s linear}
+.ab-ring::before{content:'';position:absolute;inset:3px;border-radius:50%;background:#0a0f15}
+.ab-ring .icon{position:absolute;left:50%;top:50%;width:22px;height:22px;transform:translate(-50%,-50%) rotate(90deg);color:var(--ab-color);z-index:2;filter:drop-shadow(0 0 6px color-mix(in srgb,var(--ab-color) 55%,transparent))}
+.ab-sweep{position:absolute;inset:4px;border-radius:50%;border:1px solid transparent;border-top-color:var(--ab-color);opacity:.6;z-index:1}
+.ability-btn.active .ab-sweep{animation:spin 1.15s linear infinite}
+.ab-cd{position:absolute;right:-5px;bottom:-3px;min-width:20px;text-align:center;font-family:var(--num);font-size:7px;font-weight:700;letter-spacing:.04em;color:#dbe6ee;background:rgba(8,12,17,.92);border:1px solid rgba(255,255,255,.16);border-radius:9px;padding:1px 3px;z-index:3}
+.ability-btn.ready .ab-cd{color:var(--ab-color);border-color:color-mix(in srgb,var(--ab-color) 45%,transparent)}
+.ab-key{position:absolute;left:-5px;top:-4px;width:16px;height:16px;display:grid;place-items:center;font-family:var(--num);font-size:7px;font-weight:700;color:#0b0e12;background:var(--ab-color);border-radius:3px;z-index:3}
+.ab-meta{display:flex;flex-direction:column;gap:1px;min-width:118px;pointer-events:none}
+.ab-meta b{font-size:8px;letter-spacing:.13em;color:var(--ab-color);text-shadow:0 1px 4px #000}
+.ab-meta span{font-size:6px;letter-spacing:.11em;color:#aebbc5}
+.ab-meta i{font-style:normal;font-size:5.5px;letter-spacing:.1em;color:var(--muted-2)}
+@keyframes abilityPulse{0%,100%{box-shadow:0 0 18px color-mix(in srgb,var(--ab-color) 38%,transparent)}50%{box-shadow:0 0 30px color-mix(in srgb,var(--ab-color) 68%,transparent)}}
+@keyframes abilityFlash{0%{transform:scale(1)}35%{transform:scale(1.12);box-shadow:0 0 34px var(--ab-color)}100%{transform:scale(1)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* cloak feedback */
+#hud.cloaked .vitals,#hud.cloaked .ammo-panel,#hud.cloaked .quick-slots{opacity:.72}
+#hud.cloaked #crosshair{opacity:.4}
+#hud.cloaked #damage-vignette{box-shadow:inset 0 0 90px rgba(176,109,255,.24)}
+
+/* touch skill button */
+.tbtn.ability{width:48px;height:48px;right:180px;bottom:calc(184px + var(--safe-b));color:#bcd0dc;border-color:rgba(255,210,120,.4)}
+.tbtn.ability .icon{width:20px;height:20px;color:#ffd166}
+.tbtn.ability b{position:absolute;bottom:5px;font-size:5px;letter-spacing:.06em;font-weight:500;color:#b9c6d0}
+
+/* responsive operator/ability layout */
+@media (max-width:900px){
+  .op-body{grid-template-columns:1fr}
+  .operator-swatch{height:48px}
+  #ability-panel{left:0;right:auto;bottom:calc(250px + var(--safe-b))}
+  .ab-meta{display:none}
+  .ability-btn{width:46px;height:46px}
+  .ability-btn .ab-ring .icon{width:19px;height:19px}
+  .attachment-row{display:none}
+}
+@media (max-width:520px){
+  #ability-panel{left:0;bottom:calc(292px + var(--safe-b))}
+  .ability-btn{width:42px;height:42px}
+  .ability-btn .ab-ring .icon{width:17px;height:17px}
+  .ab-key{width:14px;height:14px;font-size:6px}
+  .operator-swatch{height:40px}
+  .op-skill i{display:none}
+  .tbtn.ability{right:152px;bottom:calc(120px + var(--safe-b));width:40px;height:40px}
+  .tbtn.ability .icon{width:17px;height:17px}
+}
+@media (max-height:560px) and (orientation:landscape){
+  .tbtn.ability{right:236px;bottom:calc(180px + var(--safe-b))}
+}

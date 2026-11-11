@@ -1,4 +1,5 @@
 import { clamp, formatTime, $, el } from './utils.js';
+import { RARITY } from './config.js';
 
 export class HUD {
   constructor() {
@@ -34,6 +35,7 @@ export class HUD {
     this.updateVitals();
     this.updateAmmo();
     this.updateAlive();
+    this.updateAbility(game.player);
     this.setObjective(game.mode);
     if (game.mode.id === 'tdm') {
       $('#obj-score').classList.remove('hidden');
@@ -43,6 +45,17 @@ export class HUD {
     $('#hud-initial').textContent = (game.profile.name[0] || 'P').toUpperCase();
     $('#hud-lvl').textContent = game.profile.level;
     $('#hud-team-tag').textContent = game.mode.id === 'tdm' ? 'ALPHA' : 'SOLO';
+    // HUD.bind runs before Game creates the player; only touch operator UI once it exists.
+    const op = game.player?.operator;
+    if (op) {
+      $('#hud-operator').textContent = op.role;
+      $('#ability-name').textContent = op.active.name;
+      $('#ability-state').textContent = 'READY · ' + op.active.cooldown + 'S COOLDOWN';
+      $('#ability-passive').textContent = op.passive.name + ' · PASSIVE';
+      $('#ability-btn').style.setProperty('--ab-color', op.accent);
+    }
+    this.setCloak(false);
+    this.endHeal();
     this.killfeed.innerHTML = '';
     this.scoreboardEl.classList.add('hidden');
     this.pauseEl.classList.add('hidden');
@@ -64,6 +77,11 @@ export class HUD {
     $('#btn-again')?.addEventListener('click', () => this.game?.playAgain());
     $('#btn-lobby')?.addEventListener('click', () => this.game?.returnToLobby());
     $('#drop-skip')?.addEventListener('click', () => this.game?.skipDrop());
+    $('#quick-med')?.addEventListener('click', e => { e.stopPropagation(); this.game?.player?.useMedical('auto'); });
+    $('#quick-bandage')?.addEventListener('click', e => { e.stopPropagation(); this.game?.player?.useMedical('bandage'); });
+    $('#quick-trauma')?.addEventListener('click', e => { e.stopPropagation(); this.game?.player?.useMedical('trauma'); });
+    $('#quick-shield')?.addEventListener('click', e => { e.stopPropagation(); this.game?.player?.useMedical('shield'); });
+    $('#ability-btn')?.addEventListener('click', e => { e.stopPropagation(); this.game?.player?.activateAbility(); });
     const d = document.createElement('div');
     d.id = 'dmg-dir'; d.className = 'dmg-dir'; d.innerHTML = '<i></i>';
     document.getElementById('hud').appendChild(d);
@@ -158,42 +176,85 @@ export class HUD {
     const tr = $('#reload-track');
     if (!this.game || this.game.player.reloadTimer <= 0) { tr.classList.remove('active'); return; }
     tr.classList.add('active');
-    const p = 1 - this.game.player.reloadTimer / this.game.player.def.reload;
+    const p = 1 - this.game.player.reloadTimer / (this.game.player.reloadDuration || this.game.player.def.reload);
     tr.querySelector('i').style.width = clamp(p * 100, 0, 100) + '%';
   }
 
   startReload(dur) { this.reloadDur = dur; this.reloadStart = performance.now(); }
 
+  startHeal(def, dur) {
+    const tr = $('#heal-track');
+    tr.classList.add('active');
+    tr.classList.remove('shield');
+    if (def.shield) tr.classList.add('shield');
+    $('#heal-label').textContent = def.name;
+    tr.querySelector('i').style.width = '0%';
+  }
+  updateHeal(progress) {
+    const tr = $('#heal-track');
+    tr.classList.add('active');
+    tr.querySelector('i').style.width = clamp(progress * 100, 0, 100) + '%';
+  }
+  endHeal() {
+    const tr = $('#heal-track');
+    if (!tr) return;
+    tr.classList.remove('active', 'shield');
+  }
+
   updateVitals() {
     const p = this.game?.player;
     if (!p) return;
-    const hp = clamp(p.health, 0, 100), sh = clamp(p.shield, 0, 100);
+    const hp = clamp(p.health, 0, p.maxHealth), sh = clamp(p.shield, 0, p.maxShield);
+    const hpPct = p.maxHealth ? (hp / p.maxHealth) * 100 : 0;
+    const shPct = p.maxShield ? (sh / p.maxShield) * 100 : 0;
     const hpFill = $('#hp-fill'), hpText = $('#hp-text');
-    hpFill.style.width = hp + '%'; hpText.textContent = Math.ceil(hp);
-    $('#armor-fill').style.width = sh + '%'; $('#armor-text').textContent = Math.ceil(sh);
+    hpFill.style.width = hpPct + '%'; hpText.textContent = Math.ceil(hp);
+    $('#armor-fill').style.width = shPct + '%'; $('#armor-text').textContent = Math.ceil(sh);
     const bar = hpFill.closest('.bar');
-    bar.classList.toggle('low', hp < 30);
+    bar.classList.toggle('low', hpPct < 30);
     const ghost = $('#hp-ghost');
-    ghost.style.width = Math.max(hp, parseFloat(ghost.style.width) || 0) + '%';
-    setTimeout(() => { ghost.style.width = hp + '%'; }, 30);
+    ghost.style.width = Math.max(hpPct, parseFloat(ghost.style.width) || 0) + '%';
+    setTimeout(() => { ghost.style.width = hpPct + '%'; }, 30);
     $('#med-count').textContent = p.medkits;
+    $('#bandage-count').textContent = p.bandages;
+    $('#trauma-count').textContent = p.trauma;
     $('#shield-count').textContent = p.shields;
+    const band = $('#quick-bandage'); if (band) band.classList.toggle('empty', p.bandages <= 0);
+    const trauma = $('#quick-trauma'); if (trauma) trauma.classList.toggle('empty', p.trauma <= 0);
+    const med = $('#quick-med'); if (med) med.classList.toggle('empty', p.medkits <= 0);
+    const shield = $('#quick-shield'); if (shield) shield.classList.toggle('empty', p.shields <= 0);
   }
 
   updateAmmo() {
     const p = this.game?.player;
     if (!p) return;
     const w = p.weapon;
+    const tier = w.rarity || 'COMMON';
+    const ammo = p.ammoType(w);
     $('#weapon-label').textContent = w.def.name;
-    $('#fire-mode').textContent = w.def.auto ? 'AUTO' : 'SEMI';
+    $('#weapon-label').style.color = RARITY[tier] || '#fff';
+    $('#weapon-rarity').textContent = tier;
+    $('#weapon-rarity').style.color = RARITY[tier] || '#fff';
+    $('#weapon-rarity').style.borderColor = (RARITY[tier] || '#fff') + '55';
+    $('#ammo-type').textContent = ammo.name;
+    $('#ammo-type').style.color = ammo.color;
+    $('#fire-mode').textContent = p.overclockLeft > 0 ? 'OVERCLOCK' : w.def.auto ? 'AUTO' : 'SEMI';
     $('#ammo-mag').textContent = w.mag;
     $('#ammo-reserve').textContent = this.game.mode.infiniteAmmo ? '∞' : w.reserve;
     $('#wslot-0').textContent = p.weapons[0]?.def.short || '—';
     $('#wslot-1').textContent = p.weapons[1]?.def.short || '—';
     $('#wslot-2').textContent = p.weapons[2]?.def.short || '—';
     document.querySelectorAll('#hud .wslot').forEach((el, i) => el.classList.toggle('active', i === p.weaponIndex));
-    $('#ammo-mag').style.color = w.mag === 0 ? '#ff5b4b' : w.mag <= Math.ceil(w.def.mag * 0.25) ? '#ffc74a' : '#fff';
+    const cap = p.magCapacity(w);
+    $('#ammo-mag').style.color = w.mag === 0 ? '#ff5b4b' : w.mag <= Math.ceil(cap * 0.25) ? '#ffc74a' : '#fff';
     $('#crosshair').style.setProperty('--spread', Math.round(4 + p.currentSpread() * 2.2) + 'px');
+    const row = $('#attachment-row');
+    if (row) {
+      row.innerHTML = (w.attachments || []).map(a => {
+        const label = { ext: 'MAG', comp: 'CMP', optic: 'OPT', match: 'TRG' }[a] || a;
+        return `<span>${label}</span>`;
+      }).join('') + `<em>${cap} RND</em>`;
+    }
   }
 
   updateAlive() {
@@ -212,6 +273,44 @@ export class HUD {
   updateScore(a, b) {
     const el = $('#obj-score');
     if (el) el.innerHTML = `${a} <i>—</i> ${b}`;
+  }
+
+  updateAbility(p = this.game?.player) {
+    if (!p) return;
+    const a = p.operator.active;
+    const btn = $('#ability-btn');
+    if (!btn) return;
+    const ready = p.abilityCooldown <= 0 && p.abilityLeft <= 0;
+    const active = p.abilityLeft > 0;
+    btn.classList.toggle('ready', ready);
+    btn.classList.toggle('active', active);
+    btn.classList.toggle('cooling', !ready && !active);
+    btn.style.setProperty('--ab-color', p.operator.accent);
+    btn.style.setProperty('--cd', (p.abilityCooldown > 0 ? (1 - p.abilityCooldown / a.cooldown) * 360 : 360) + 'deg');
+    const cd = $('#ability-cd');
+    if (cd) cd.textContent = active ? Math.ceil(p.abilityLeft) + 'S' : p.abilityCooldown > 0 ? Math.ceil(p.abilityCooldown) + 'S' : 'READY';
+    const state = $('#ability-state');
+    if (state) state.textContent = active ? `ACTIVE · ${Math.ceil(p.abilityLeft)}S` : p.abilityCooldown > 0 ? `COOLDOWN · ${Math.ceil(p.abilityCooldown)}S` : `READY · ${a.cooldown}S COOLDOWN`;
+    const name = $('#ability-name');
+    if (name) name.textContent = a.name;
+    const passive = $('#ability-passive');
+    if (passive) passive.textContent = p.operator.passive.name + ' · PASSIVE';
+    const sweep = $('#ability-sweep');
+    if (sweep) sweep.style.setProperty('--ab-color', p.operator.accent);
+  }
+
+  abilityActivated(a) {
+    const btn = $('#ability-btn');
+    btn?.classList.add('flash');
+    setTimeout(() => btn?.classList.remove('flash'), 500);
+  }
+
+  abilityEnded(a) {
+    this.toast(a.name + ' ENDED', 'RECHARGING');
+  }
+
+  setCloak(on) {
+    this.root.classList.toggle('cloaked', !!on);
   }
 
   drawMinimap() {

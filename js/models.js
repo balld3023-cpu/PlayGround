@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { transformGeom, boxGeom, cylGeom } from './utils.js';
+import { RARITY, AMMO_TYPES } from './config.js';
 
 /* ---------------- shared materials ---------------- */
 const MAT = {
@@ -382,10 +383,15 @@ export function createVehicle(type = 'buggy', color = '#c8652a') {
 }
 
 /* ---------------- pickups ---------------- */
-export function createPickupModel(kind, weaponId = 'vanguard') {
+export function createPickupModel(kind, weaponId = 'vanguard', rarity = 'COMMON', ammoType = null) {
   const g = new THREE.Group();
-  const color = kind === 'med' ? '#52e6a0' : kind === 'shield' ? '#4fd8ff' : kind === 'ammo' ? '#ffc74a' : kind === 'airdrop' ? '#ff7a1a' : '#ff9d2e';
-  const mat = new THREE.MeshStandardMaterial({ color: kind === 'med' ? 0xe8f4ef : kind === 'ammo' ? 0x33352f : 0x3a3f45, roughness: 0.6, metalness: 0.3 });
+  const medColor = kind === 'trauma' ? '#ffd166' : kind === 'bandage' ? '#9de6b7' : kind === 'med' || kind === 'medkit' ? '#52e6a0' : null;
+  const color = kind === 'shield' ? '#4fd8ff'
+    : medColor ? medColor
+      : kind === 'ammo' ? (AMMO_TYPES[ammoType]?.color || '#ffc74a')
+        : kind === 'airdrop' ? '#ff7a1a'
+          : (RARITY[rarity] || '#ff9d2e');
+  const mat = new THREE.MeshStandardMaterial({ color: kind === 'bandage' ? 0xe8f4ef : kind === 'ammo' ? 0x33352f : 0x3a3f45, roughness: 0.6, metalness: 0.3 });
   const accent = new THREE.MeshStandardMaterial({ color: new THREE.Color(color), emissive: new THREE.Color(color), emissiveIntensity: 0.9, roughness: 0.4 });
   if (kind === 'weapon' || kind === 'airdrop') {
     const s = kind === 'airdrop' ? 1.4 : 1;
@@ -396,11 +402,24 @@ export function createPickupModel(kind, weaponId = 'vanguard') {
       const w = createWeaponModel(weaponId);
       w.scale.setScalar(0.65 * s); w.position.y = 0.62 * s; w.rotation.x = 0.15;
       g.add(w);
+      // rarity gem floats above the crate so loot reads at a glance
+      const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.1 * s, 0), accent);
+      gem.position.y = 1.02 * s; gem.rotation.z = 0.4; g.add(gem);
+      g.userData.gem = gem;
     }
-  } else if (kind === 'med') {
+  } else if (kind === 'med' || kind === 'medkit') {
     addBox(g, mat, 0.46, 0.3, 0.34, 0, 0.2, 0);
     addBox(g, accent, 0.26, 0.07, 0.35, 0, 0.2, 0);
     addBox(g, accent, 0.07, 0.26, 0.35, 0, 0.2, 0);
+  } else if (kind === 'bandage') {
+    addBox(g, mat, 0.38, 0.18, 0.26, 0, 0.18, 0);
+    addBox(g, accent, 0.4, 0.06, 0.28, 0, 0.24, 0);
+    addBox(g, accent, 0.2, 0.04, 0.28, 0, 0.18, 0);
+  } else if (kind === 'trauma') {
+    addBox(g, mat, 0.5, 0.32, 0.38, 0, 0.22, 0);
+    addBox(g, accent, 0.55, 0.06, 0.4, 0, 0.4, 0);
+    addBox(g, accent, 0.08, 0.24, 0.4, 0, 0.22, 0);
+    addBox(g, accent, 0.24, 0.08, 0.4, 0, 0.22, 0);
   } else if (kind === 'shield') {
     addCyl(g, mat, 0.14, 0.14, 0.36, 0, 0.22, 0, 0, 0, 0, 10);
     addCyl(g, accent, 0.145, 0.145, 0.06, 0, 0.31, 0, 0, 0, 0, 10);

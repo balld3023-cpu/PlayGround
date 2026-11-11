@@ -1,4 +1,4 @@
-import { DEFAULT_PROFILE, OUTFITS, SKINS, HELMETS, BACKPACKS, WEAPONS } from './config.js';
+import { DEFAULT_PROFILE, OUTFITS, SKINS, HELMETS, BACKPACKS, WEAPONS, OPERATORS } from './config.js';
 
 const KEY = 'blaze-royale-profile-v1';
 
@@ -22,6 +22,7 @@ export function outfitOf(id) { return OUTFITS.find(o => o.id === id) || OUTFITS[
 export function skinOf(id) { return SKINS.find(o => o.id === id) || SKINS[1]; }
 export function helmetOf(id) { return HELMETS.find(o => o.id === id) || HELMETS[0]; }
 export function backpackOf(id) { return BACKPACKS.find(o => o.id === id) || BACKPACKS[0]; }
+export function operatorOf(id) { return OPERATORS.find(o => o.id === id) || OPERATORS[0]; }
 export function weaponOf(id) { return WEAPONS[id] || WEAPONS.vanguard; }
 
 export function getLoadout(p) {
@@ -54,6 +55,8 @@ export function randomizeLook(p) {
   p.skin = SKINS[Math.floor(Math.random() * SKINS.length)].id;
   p.helmet = HELMETS[Math.floor(Math.random() * HELMETS.length)].id;
   p.backpack = BACKPACKS[Math.floor(Math.random() * BACKPACKS.length)].id;
+  const ops = OPERATORS.filter(o => o.id !== p.operator);
+  p.operator = ops[Math.floor(Math.random() * ops.length)].id;
   saveProfile(p);
   return p;
 }

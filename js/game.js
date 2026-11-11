@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { clamp, damp, lerp, rand, pick, formatTime } from './utils.js';
-import { WEAPONS, MODES } from './config.js';
+import { WEAPONS, MODES, LOOT_RARITY, AMMO_TYPES, WEAPON_AMMO, MED_ITEMS } from './config.js';
 import { buildWorld } from './world.js';
 import { createHumanoid, createParachute, createVehicle, createPickupModel } from './models.js';
 import { Effects } from './effects.js';
@@ -32,6 +32,8 @@ export class Game {
     this.vehicle = null;
     this.time = 0;
     this.matchTime = 0;
+    this.revealUntil = 0;
+    this.pulseFx = null;
     this.active = true;
     this.paused = false;
     this.over = false;
@@ -126,8 +128,8 @@ export class Game {
       this.playerModel.visible = false;
       this.scene.add(this.playerModel);
     }
-    this.player.health = 100;
-    this.player.shield = this.mode.armor || 0;
+    this.player.health = this.player.maxHealth;
+    this.player.shield = Math.min(this.player.maxShield, (this.mode.armor || 0) + this.player.operator.stats.armor * 0.5);
   }
 
   outfitData() {
@@ -190,8 +192,11 @@ export class Game {
     this.input.on('jump', () => { if (this.paused || this.over) return; if (this.vehicle) return; this.player.jump(); });
     this.input.on('reload', () => { if (!this.paused && !this.vehicle) this.player.startReload(); });
     this.input.on('interact', () => { if (!this.paused) this.interact(); });
-    this.input.on('med', () => { if (!this.paused && !this.vehicle) this.player.heal(50); });
-    this.input.on('shield', () => { if (!this.paused && !this.vehicle) this.player.useShield(50); });
+    this.input.on('med', () => { if (!this.paused && !this.vehicle) this.player.useMedical('auto'); });
+    this.input.on('bandage', () => { if (!this.paused && !this.vehicle) this.player.useMedical('bandage'); });
+    this.input.on('trauma', () => { if (!this.paused && !this.vehicle) this.player.useMedical('trauma'); });
+    this.input.on('shield', () => { if (!this.paused && !this.vehicle) this.player.useMedical('shield'); });
+    this.input.on('ability', () => { if (!this.paused && !this.vehicle) this.player.activateAbility(); });
     this.input.on('slot', i => { if (!this.paused && !this.vehicle) this.player.equip(i); });
     this.input.on('swap', dir => {
       if (this.paused || this.vehicle) return;
@@ -325,27 +330,64 @@ export class Game {
   }
 
   /* ---------------- loot ---------------- */
+  rollLootRarity(bonus = 0) {
+    const entries = Object.entries(LOOT_RARITY);
+    let total = 0;
+    const weights = entries.map(([id, r]) => {
+      const w = Math.max(0.5, r.weight * (1 + bonus * r.tier * 0.16));
+      total += w;
+      return [id, w];
+    });
+    let roll = Math.random() * total;
+    for (const [id, w] of weights) { roll -= w; if (roll <= 0) return id; }
+    return 'COMMON';
+  }
+
   spawnPickups() {
     const spots = this.world.lootSpots;
-    const step = Math.max(1, Math.floor(spots.length / 42));
+    const step = Math.max(1, Math.floor(spots.length / 54));
+    const weaponPool = ['vanguard', 'raptor', 'longshot', 'longshot', 'breaker', 'viper', 'ghost', 'vanguard'];
+    const ammoPool = ['556', '556', '9mm', '12g', '300', '45'];
     let count = 0;
-    for (let i = 0; i < spots.length && count < 46; i += step) {
+    for (let i = 0; i < spots.length && count < 58; i += step) {
       const s = spots[i];
       let kind = s.kind;
-      if (kind === 'random') kind = pick(['ammo', 'med', 'shield', 'ammo', 'med', 'weapon', 'shield']);
-      const weaponId = kind === 'weapon' ? pick(['vanguard', 'viper', 'breaker', 'longshot', 'raptor']) : (kind === 'ammo' ? pick(['vanguard', 'viper', 'sidearm']) : null);
-      this.spawnPickup(s.x, s.z, s.y, kind, weaponId);
+      if (kind === 'random') {
+        const r = Math.random();
+        kind = r < 0.34 ? 'weapon'
+          : r < 0.52 ? 'ammo'
+            : r < 0.64 ? 'med'
+              : r < 0.74 ? 'shield'
+                : r < 0.84 ? 'bandage'
+                  : r < 0.9 ? 'trauma'
+                    : 'weapon';
+      }
+      if (kind === 'weapon') {
+        const weaponId = pick(weaponPool);
+        const rarity = this.rollLootRarity(this.mode.id === 'br' ? 0.35 : 0.1);
+        this.spawnPickup(s.x, s.z, s.y, 'weapon', weaponId, rarity);
+      } else if (kind === 'ammo') {
+        this.spawnPickup(s.x, s.z, s.y, 'ammo', null, 'COMMON', pick(ammoPool));
+      } else if (kind === 'med') {
+        const r = Math.random();
+        const item = r < 0.5 ? 'medkit' : r < 0.8 ? 'bandage' : 'trauma';
+        this.spawnPickup(s.x, s.z, s.y, item);
+      } else if (kind === 'bandage' || kind === 'trauma' || kind === 'shield') {
+        this.spawnPickup(s.x, s.z, s.y, kind);
+      } else {
+        this.spawnPickup(s.x, s.z, s.y, kind);
+      }
       count++;
     }
   }
 
-  spawnPickup(x, z, y, kind, weaponId = null) {
-    const model = createPickupModel(kind, weaponId || 'vanguard');
+  spawnPickup(x, z, y, kind, weaponId = null, rarity = 'COMMON', ammoType = null) {
+    const model = createPickupModel(kind, weaponId || 'vanguard', rarity, ammoType);
     const yy = Math.max(y, this.world.heightAt(x, z) + 0.03);
     model.position.set(x, yy, z);
     model.rotation.y = rand(0, 6);
     this.scene.add(model);
-    const p = { x, z, y: yy, kind, weaponId, model, active: true, baseY: yy, t: rand(0, 6) };
+    const p = { x, z, y: yy, kind, weaponId, rarity, ammoType, model, active: true, baseY: yy, t: rand(0, 6) };
     this.pickups.push(p);
     return p;
   }
@@ -354,13 +396,17 @@ export class Game {
     const p = this.player;
     for (let i = this.pickups.length - 1; i >= 0; i--) {
       const pk = this.pickups[i];
-      if (!pk.active) { this.pickups.splice(i, 1); continue; }
+      if (!pk.active) { this.scene.remove(pk.model); this.pickups.splice(i, 1); continue; }
       pk.t += dt;
       pk.model.rotation.y += dt * 0.9;
       pk.model.position.y = pk.baseY + Math.sin(pk.t * 1.8) * 0.06;
       if (pk.model.userData.ring) {
         const s = 1 + Math.sin(pk.t * 2.4) * 0.12;
         pk.model.userData.ring.scale.setScalar(s);
+      }
+      if (pk.model.userData.gem) {
+        pk.model.userData.gem.rotation.y += dt * 2.4;
+        pk.model.userData.gem.position.y = 1.02 + Math.sin(pk.t * 3) * 0.05;
       }
       if (p.alive && p.mode !== 'dead' && !this.vehicle) {
         const dx = p.pos.x - pk.x, dz = p.pos.z - pk.z;
@@ -378,45 +424,71 @@ export class Game {
     audio.pickup();
     if (pk.kind === 'weapon') {
       const def = WEAPONS[pk.weaponId];
-      const current = p.weapon.def;
-      if (current.id === pk.weaponId) {
-        p.weapon.reserve += def.reserve;
-        this.hud.pickup(def.name, '+' + def.reserve + ' AMMO', 'i-gun');
+      const rarity = pk.rarity || 'COMMON';
+      const same = p.weapons.some(w => w.def.id === pk.weaponId);
+      const result = p.equipId(pk.weaponId, rarity);
+      if (result) {
+        p.weapon.reserve += Math.round(def.reserve * (same ? 0.5 : 0.35));
+        const tier = LOOT_RARITY[rarity];
+        this.hud.pickup(def.name, `${rarity} · ${tier.attachments.length ? tier.attachments.length + ' ATTACH' : 'STANDARD'}`, 'i-gun');
+        if (tier.tier >= 3) this.hud.banner(rarity + ' WEAPON', def.name, 1800);
         this.hud.updateAmmo();
-      } else {
-        p.equipId(pk.weaponId);
-        this.hud.pickup(def.name, 'EQUIPPED', 'i-gun');
       }
     } else if (pk.kind === 'ammo') {
-      p.weapon.reserve += Math.ceil(p.weapon.def.mag * 2.5);
-      this.hud.pickup('AMMO', '+' + Math.ceil(p.weapon.def.mag * 2.5), 'i-gun');
+      const type = pk.ammoType || '556';
+      let added = 0;
+      for (const w of p.weapons) {
+        if (WEAPON_AMMO[w.def.id] !== type) continue;
+        const amount = Math.ceil(w.def.mag * 2.5);
+        w.reserve += amount;
+        added += amount;
+      }
+      if (added) {
+        this.hud.pickup(AMMO_TYPES[type].name, '+' + added, 'i-gun');
+      } else {
+        this.hud.pickup(AMMO_TYPES[type].name, 'NO MATCHING WEAPON', 'i-gun');
+      }
       this.hud.updateAmmo();
-    } else if (pk.kind === 'med') {
-      p.medkits = Math.min(5, p.medkits + 1);
-      this.hud.pickup('MEDKIT', '+1', 'i-med');
-      this.hud.updateVitals();
-    } else if (pk.kind === 'shield') {
-      p.shields = Math.min(4, p.shields + 1);
-      this.hud.pickup('SHIELD CELL', '+1', 'i-shield');
-      this.hud.updateVitals();
     } else if (pk.kind === 'airdrop') {
-      const id = pick(['longshot', 'raptor']);
-      p.equipId(id);
-      p.weapon.mag = p.weapon.def.mag;
+      const id = 'longshot';
+      p.equipId(id, 'LEGENDARY', true);
+      p.weapon.mag = p.magCapacity();
       p.weapon.reserve = p.weapon.def.reserve;
-      p.shields = Math.min(4, p.shields + 2);
-      p.medkits = Math.min(5, p.medkits + 2);
+      p.addItem('shield', 2);
+      p.addItem('trauma', 1);
+      p.addItem('medkit', 2);
       this.hud.pickup('LEGENDARY DROP', WEAPONS[id].name, 'i-trophy');
-      this.hud.banner('AIRDROP SECURED', WEAPONS[id].name, 2200);
+      this.hud.banner('AIRDROP SECURED', 'LEGENDARY LONGSHOT AWM', 2200);
       this.hud.updateAmmo(); this.hud.updateVitals();
+    } else {
+      const def = MED_ITEMS[pk.kind];
+      if (!def) return;
+      const added = p.addItem(pk.kind, 1);
+      if (added > 0) {
+        this.hud.pickup(def.name, '+1', def.icon);
+        if (pk.kind === 'trauma') this.hud.toast('TRAUMA KIT ACQUIRED', 'FULL RESTORE ITEM');
+      } else {
+        this.hud.toast('INVENTORY FULL', def.name + ' · ' + def.max + ' MAX');
+      }
+      this.hud.updateVitals();
     }
   }
 
   dropBotLoot(bot) {
     const y = this.world.heightAt(bot.pos.x, bot.pos.z);
-    this.spawnPickup(bot.pos.x + rand(-1.2, 1.2), bot.pos.z + rand(-1.2, 1.2), y, 'ammo');
-    if (Math.random() > 0.35) this.spawnPickup(bot.pos.x + rand(-1, 1), bot.pos.z + rand(-1, 1), y, 'med');
-    if (Math.random() > 0.45) this.spawnPickup(bot.pos.x + rand(-1, 1), bot.pos.z + rand(-1, 1), y, 'weapon', bot.weaponDef.id);
+    const type = WEAPON_AMMO[bot.weaponDef.id] || '556';
+    this.spawnPickup(bot.pos.x + rand(-1.4, 1.4), bot.pos.z + rand(-1.4, 1.4), y, 'ammo', null, 'COMMON', type);
+    if (Math.random() > 0.3) {
+      const item = Math.random() > 0.55 ? 'medkit' : Math.random() > 0.5 ? 'bandage' : 'shield';
+      this.spawnPickup(bot.pos.x + rand(-1, 1), bot.pos.z + rand(-1, 1), y, item);
+    }
+    if (Math.random() > 0.28) {
+      const rarity = this.rollLootRarity(0.6 + (bot.skill || 0.5));
+      this.spawnPickup(bot.pos.x + rand(-1, 1), bot.pos.z + rand(-1, 1), y, 'weapon', bot.weaponDef.id, rarity);
+    }
+    if (Math.random() > 0.86) {
+      this.spawnPickup(bot.pos.x + rand(-1, 1), bot.pos.z + rand(-1, 1), y, 'trauma');
+    }
   }
 
   /* ---------------- vehicles ---------------- */
@@ -568,6 +640,49 @@ export class Game {
   }
 
   /* ---------------- combat ---------------- */
+  pulseScan(duration = 7) {
+    this.revealUntil = this.time + duration;
+    this.hud?.banner('RECON PULSE', 'HOSTILES REVEALED · ' + duration + 'S', 1600);
+    this.hud?.toast('SCAN COMPLETE', 'THREATS MARKED THROUGH COVER');
+    if (this.pulseFx) {
+      this.scene.remove(this.pulseFx.mesh);
+      this.pulseFx.mesh.geometry.dispose();
+      this.pulseFx.mesh.material.dispose();
+    }
+    const mesh = new THREE.Mesh(
+      new THREE.RingGeometry(0.93, 1.0, 64),
+      new THREE.MeshBasicMaterial({ color: 0x25ddc3, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending })
+    );
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set(this.player.pos.x, this.player.pos.y + 0.25, this.player.pos.z);
+    this.scene.add(mesh);
+    this.pulseFx = { mesh, t: 0, duration: 1.4 };
+    audio.shield();
+    for (const b of this.bots.bots) {
+      if (!b.alive) continue;
+      const d = Math.hypot(b.pos.x - this.player.pos.x, b.pos.z - this.player.pos.z);
+      if (d < 80) {
+        this.effects.impact(b.center(), null, '#25ddc3', true);
+        b.revealedUntil = this.time + duration;
+      }
+    }
+  }
+
+  updatePulseFx(dt) {
+    if (!this.pulseFx) return;
+    const fx = this.pulseFx;
+    fx.t += dt;
+    const k = clamp(fx.t / fx.duration, 0, 1);
+    fx.mesh.scale.setScalar(1 + k * 34);
+    fx.mesh.material.opacity = 0.85 * (1 - k);
+    if (k >= 1) {
+      this.scene.remove(fx.mesh);
+      fx.mesh.geometry.dispose();
+      fx.mesh.material.dispose();
+      this.pulseFx = null;
+    }
+  }
+
   castShot(origin, dir, range, shooter) {
     const raycaster = new THREE.Raycaster(origin, dir, 0.1, range);
     const meshes = [];
@@ -617,6 +732,11 @@ export class Game {
     const weaponName = (def || bot.weaponDef).short;
     if (isPlayer) {
       this.player.kills++;
+      if (this.player.operator.passive.id === 'ironlung') {
+        this.player.health = Math.min(this.player.maxHealth, this.player.health + 15);
+        this.player.reloadSurge = 10;
+        this.hud.toast('IRON LUNGS', '+15 HEALTH · RELOAD SURGE');
+      }
       if (this.mode.id === 'tdm') this.bots.notifyKill(0);
       this.hud.killFeed(this.profile.name.toUpperCase(), bot.name.toUpperCase(), weaponName, true, head);
       this.hud.banner(head ? 'HEADSHOT ELIMINATION' : 'ENEMY ELIMINATED', bot.name.toUpperCase(), 1500);
@@ -872,6 +992,7 @@ export class Game {
       this.updatePickups(dt, this.time);
       this.updateZone(dt);
       this.updateAirdrop(dt);
+      this.updatePulseFx(dt);
       this.updateInteract();
       this.world.update(dt, this.player.pos);
       this.hud.update(dt);

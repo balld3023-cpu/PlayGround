@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { clamp, damp, rand, randInt, pick, deg, angleDelta } from './utils.js';
 import { createHumanoid, createNameTag, createWeaponModel, createPickupModel } from './models.js';
-import { WEAPONS, OUTFITS, SKINS, HELMETS, BOT_NAMES } from './config.js';
+import { WEAPONS, OUTFITS, SKINS, HELMETS, BOT_NAMES, OPERATORS } from './config.js';
+import { operatorOf } from './profile.js';
 import { audio } from './audio.js';
 
 const BOT_OUTFITS = ['#252b33', '#2f3b33', '#3d3134', '#32322d', '#293546', '#463a2a', '#3a2c38', '#2c3c45'];
@@ -20,8 +21,9 @@ class Bot {
     this.skin = opts.skin;
     this.helmet = opts.helmet;
     this.weaponDef = opts.weapon;
-    this.health = 100;
-    this.maxHealth = 100;
+    this.operator = opts.operator || operatorOf('phantom');
+    this.health = this.operator.stats.health;
+    this.maxHealth = this.operator.stats.health;
     this.alive = true;
     this.pos = new THREE.Vector3(opts.x, opts.y, opts.z);
     this.vel = new THREE.Vector3();
@@ -32,8 +34,9 @@ class Bot {
     this.fireTimer = rand(0.4, 1.6);
     this.strafeDir = Math.random() > 0.5 ? 1 : -1;
     this.dest = new THREE.Vector3(opts.x + rand(-12, 12), 0, opts.z + rand(-12, 12));
-    this.speed = rand(2.6, 4.4);
+    this.speed = rand(2.6, 4.4) * (this.operator.stats.speed || 1);
     this.skill = rand(0.35, 0.78);
+    this.revealedUntil = 0;
     this.lastDamage = -99;
     this.deadTime = 0;
     this.stuckTimer = 0;
@@ -46,7 +49,7 @@ class Bot {
   }
 
   buildModel() {
-    const outfitColors = { top: this.outfit, pants: this.pants || pick(BOT_PANTS), accent: pick(ACCENTS), vest: '#161a1f' };
+    const outfitColors = { top: this.outfit, pants: this.pants || pick(BOT_PANTS), accent: this.operator.accent || pick(ACCENTS), vest: '#161a1f' };
     this.model = createHumanoid({
       outfit: outfitColors, skin: this.skin, helmet: this.helmet,
       backpack: Math.random() > 0.4 ? 'recon' : 'none',
@@ -85,6 +88,7 @@ class Bot {
     // team ring
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.62, 18), new THREE.MeshBasicMaterial({ color: new THREE.Color(this.teamColor), transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false }));
     ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03;
+    ring.userData.baseColor = this.teamColor;
     this.model.add(ring); this.ring = ring;
     // tag
     this.tag = createNameTag(this.name, this.team === 0 && this.game.mode.id !== 'br' ? '#6ff5e0' : '#ffb3a8');
@@ -159,7 +163,7 @@ class Bot {
 
   respawn(x, z) {
     this.alive = true;
-    this.health = 100;
+    this.health = this.maxHealth;
     this.pos.set(x, this.world.heightAt(x, z) + 0.05, z);
     this.vel.set(0, 0, 0);
     this.state = 'patrol';
@@ -180,6 +184,7 @@ class Bot {
     const targetPos = target.center ? target.center() : target.pos.clone().add(new THREE.Vector3(0, 1.2, 0));
     const targetVel = target.vel ? Math.hypot(target.vel.x, target.vel.z) : 0;
     let chance = clamp(0.8 - dist * 0.009 - targetVel * 0.026, 0.1, 0.75) * this.skill;
+    if (target === this.game.player && target.cloakLeft > 0) chance *= 0.2;
     if (target.crouching) chance *= 0.8;
     if (target.aiming) chance *= 0.92;
     const hit = Math.random() < chance;
@@ -188,8 +193,9 @@ class Bot {
     this.game.effects.muzzle(muzzle, '#ffcc88', 0.8);
     audio.shot(def.model, this.pos.distanceTo(this.game.player.pos));
     if (hit) {
-      let dmg = def.dmg * rand(0.55, 0.85);
+      let dmg = def.dmg * rand(0.55, 0.85) * (this.operator.stats.damage || 1);
       if (def.pellets > 1) dmg *= rand(0.4, 0.9);
+      if (this.game.player.operator?.passive.id === 'plating' && target === this.game.player) dmg *= 0.92;
       if (target === this.game.player) target.takeDamage(Math.round(dmg), this);
       else target.takeDamage(Math.round(dmg), this);
       this.game.effects.impact(end, null, '#ffb060', true);
@@ -303,13 +309,15 @@ class Bot {
     this.parts.rightArm.rotation.x = -1.18 - Math.sin(this.walkPhase) * swing * 0.1;
     this.parts.torso.position.y = 1.2 + Math.abs(Math.sin(this.walkPhase)) * 0.018 * Math.min(1, spd);
     this.model.updateMatrixWorld();
-    // tag visibility
+    // tag visibility (operator scan reveals through cover for a short window)
     const distToPlayer = this.pos.distanceTo(this.game.player.pos);
+    const revealed = (this.game.revealUntil || 0) > this.game.time || (this.revealedUntil || 0) > this.game.time;
     if (this.tag) {
-      this.tag.visible = distToPlayer < 55 || (this.game.time - this.lastDamage < 6);
-      this.tag.material.opacity = clamp(1.8 - distToPlayer / 45, 0.25, 1);
+      this.tag.visible = revealed || distToPlayer < 55 || (this.game.time - this.lastDamage < 6);
+      this.tag.material.opacity = revealed ? 1 : clamp(1.8 - distToPlayer / 45, 0.25, 1);
     }
-    if (this.ring) this.ring.visible = distToPlayer < 70;
+    if (this.ring) this.ring.visible = revealed || distToPlayer < 70;
+    if (this.ring) this.ring.material.color.set(revealed ? 0x25ddc3 : (this.ring.userData.baseColor || 0xff7a1a));
     // health tag refresh
     if (this.tagTimer < this.game.time && this.tag && this.tag.userData.lastHealth !== this.health) {
       this.tagTimer = this.game.time + 0.25;
@@ -381,7 +389,8 @@ export class BotManager {
         x: sp.x, z: sp.z, y: sp.y != null ? sp.y : this.world.heightAt(sp.x, sp.z),
         name: this.nextName(), team,
         outfit: pick(BOT_OUTFITS), pants: pick(BOT_PANTS), skin: pick(SKINS).color,
-        helmet: pick(HELMETS.slice(1)).id, weapon: def
+        helmet: pick(HELMETS.slice(1)).id, weapon: def,
+        operator: pick(OPERATORS)
       });
       this.bots.push(bot);
     }
@@ -421,8 +430,13 @@ export class BotManager {
     const candidates = [];
     const player = g.player;
     if (player.alive && (this.mode.id !== 'tdm' || bot.team !== 0)) {
+      let detect = 68;
+      if (player.operator?.passive.id === 'shadow') detect = 46;
+      if (player.operator?.passive.id === 'ghoststep') detect *= 0.82;
+      if (player.cloakLeft > 0) detect = 13;
+      if (player.crouching) detect *= 0.9;
       const d = bot.pos.distanceTo(player.pos);
-      if (d < 68) candidates.push({ t: player, d });
+      if (d < detect) candidates.push({ t: player, d });
     }
     for (const b of this.bots) {
       if (b === bot || !b.alive) continue;

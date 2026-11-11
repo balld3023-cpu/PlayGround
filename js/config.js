@@ -71,6 +71,93 @@ export const WEAPONS = {
 export const PRIMARY_IDS = ['vanguard', 'viper', 'breaker', 'longshot', 'raptor'];
 export const SECONDARY_IDS = ['sidearm', 'fang', 'cyclone', 'ghost'];
 
+/* Ammo is tracked per weapon but typed, so loot only feeds matching guns. */
+export const AMMO_TYPES = {
+  '556': { id: '556', name: '5.56 NATO', short: '5.56', color: '#ffc74a' },
+  '762': { id: '762', name: '7.62 × 51', short: '7.62', color: '#ff9d4a' },
+  '9mm': { id: '9mm', name: '9 × 19', short: '9MM', color: '#7df2d5' },
+  '12g': { id: '12g', name: '12 GAUGE', short: '12G', color: '#ff6a5a' },
+  '300': { id: '300', name: '.300 MAG', short: '.300', color: '#8fc4ff' },
+  '45': { id: '45', name: '.45 ACP', short: '.45', color: '#d0a2ff' }
+};
+export const WEAPON_AMMO = {
+  vanguard: '556', raptor: '556',
+  viper: '9mm', ghost: '9mm', sidearm: '9mm',
+  breaker: '12g', cyclone: '12g',
+  longshot: '300',
+  fang: '45'
+};
+
+/* Loot rarity modifies a freshly picked-up weapon. Attachments are tied to tier. */
+export const LOOT_RARITY = {
+  COMMON: { tier: 0, weight: 42, dmg: 1.0, mag: 1.0, reload: 1.0, recoil: 1.0, attachments: [] },
+  UNCOMMON: { tier: 1, weight: 27, dmg: 1.03, mag: 1.15, reload: 0.95, recoil: 1.0, attachments: ['ext'] },
+  RARE: { tier: 2, weight: 18, dmg: 1.06, mag: 1.2, reload: 0.9, recoil: 0.9, attachments: ['ext', 'comp'] },
+  EPIC: { tier: 3, weight: 9, dmg: 1.11, mag: 1.3, reload: 0.85, recoil: 0.82, attachments: ['ext', 'comp', 'optic'] },
+  LEGENDARY: { tier: 4, weight: 4, dmg: 1.18, mag: 1.4, reload: 0.8, recoil: 0.74, attachments: ['ext', 'comp', 'optic', 'match'] }
+};
+
+export const ATTACHMENTS = {
+  ext: { id: 'ext', name: 'EXTENDED MAG', short: 'MAG', desc: '+20% magazine capacity', icon: 'i-backpack' },
+  comp: { id: 'comp', name: 'COMPENSATOR', short: 'CMP', desc: '−18% vertical recoil', icon: 'i-gun' },
+  optic: { id: 'optic', name: 'TACTICAL OPTIC', short: 'OPT', desc: 'Extra zoom and target clarity', icon: 'i-scope' },
+  match: { id: 'match', name: 'MATCH TRIGGER', short: 'TRG', desc: 'Better damage and reload speed', icon: 'i-trophy' }
+};
+
+/* Field medicine — deliberately different risk/reward tradeoffs. */
+export const MED_ITEMS = {
+  bandage: { id: 'bandage', name: 'BANDAGE', short: 'BDG', heal: 22, time: 1.5, max: 8, color: '#9de6b7', icon: 'i-med', desc: 'Fast, small heal. Keep moving.' },
+  medkit: { id: 'medkit', name: 'FIELD MEDKIT', short: 'MED', heal: 55, time: 2.7, max: 4, color: '#52e6a0', icon: 'i-med', desc: 'Reliable mid-fight recovery.' },
+  trauma: { id: 'trauma', name: 'TRAUMA KIT', short: 'TRM', heal: 100, time: 4.4, max: 2, color: '#ffd166', icon: 'i-med', desc: 'Full restore. Long commitment.' },
+  shield: { id: 'shield', name: 'SHIELD CELL', short: 'SHD', shield: 50, time: 2.0, max: 4, color: '#4fd8ff', icon: 'i-shield', desc: 'Restores armor plates.' }
+};
+
+/* Operators blend looks, stat identity, a passive, and a cooldown ultimate. */
+export const OPERATORS = [
+  {
+    id: 'phantom', name: 'PHANTOM', role: 'RECON', rarity: 'EPIC', accent: '#25ddc3',
+    tagline: 'See the fight before it sees you.',
+    stats: { health: 100, armor: 30, speed: 1.03, regen: 1.15, reload: 1.0, recoil: 0.94, damage: 1.0 },
+    passive: { id: 'ghoststep', name: 'GHOST STEP', desc: 'Footsteps are 45% quieter and enemies detect you 18% later.' },
+    active: { id: 'pulse', name: 'RECON PULSE', desc: 'Scan the sector. Enemies nearby are revealed through cover for 7 seconds.', cooldown: 26, duration: 7 }
+  },
+  {
+    id: 'havoc', name: 'HAVOC', role: 'ASSAULT', rarity: 'LEGENDARY', accent: '#ff7a1a',
+    tagline: 'Suppression is a language. Speak loudly.',
+    stats: { health: 115, armor: 25, speed: 1.0, regen: 0.9, reload: 1.08, recoil: 1.06, damage: 1.04 },
+    passive: { id: 'ironlung', name: 'IRON LUNGS', desc: 'Recover 15 health and reload 8% faster for 10s after an elimination.' },
+    active: { id: 'overclock', name: 'OVERCLOCK', desc: 'Fire rate +50% and recoil −35% for 7 seconds.', cooldown: 30, duration: 7 }
+  },
+  {
+    id: 'sable', name: 'SABLE', role: 'SUPPORT', rarity: 'RARE', accent: '#52e6a0',
+    tagline: 'The squad that heals together, wins together.',
+    stats: { health: 105, armor: 35, speed: 1.0, regen: 1.35, reload: 0.95, recoil: 0.98, damage: 0.98 },
+    passive: { id: 'fieldmedic', name: 'FIELD MEDIC', desc: 'Medical items are 30% stronger and 20% faster to use.' },
+    active: { id: 'adrenaline', name: 'ADRENALINE', desc: 'Regenerate 65 health over 6 seconds and move 28% faster.', cooldown: 28, duration: 6 }
+  },
+  {
+    id: 'titan', name: 'TITAN', role: 'TANK', rarity: 'EPIC', accent: '#4fa8ff',
+    tagline: 'Walk through the fire. Let it break on you.',
+    stats: { health: 130, armor: 55, speed: 0.93, regen: 0.85, reload: 0.92, recoil: 0.86, damage: 1.0 },
+    passive: { id: 'plating', name: 'HARD PLATING', desc: 'Armor absorbs 82% of incoming damage instead of 66%.' },
+    active: { id: 'bulwark', name: 'BULWARK', desc: 'Project a 90-point overshield that decays after 9 seconds.', cooldown: 32, duration: 9 }
+  },
+  {
+    id: 'wraith', name: 'WRAITH', role: 'INFILTRATOR', rarity: 'LEGENDARY', accent: '#b06dff',
+    tagline: 'Not here. Never was.',
+    stats: { health: 95, armor: 25, speed: 1.07, regen: 1.1, reload: 1.02, recoil: 1.0, damage: 1.02 },
+    passive: { id: 'shadow', name: 'SHADOW PROFILE', desc: 'Enemies need much closer range to acquire you. +20% ADS accuracy.' },
+    active: { id: 'cloak', name: 'VEIL DRIVE', desc: 'Become nearly invisible for 6 seconds. Firing breaks the cloak.', cooldown: 27, duration: 6 }
+  },
+  {
+    id: 'blitz', name: 'BLITZ', role: 'SCOUT', rarity: 'RARE', accent: '#ffd166',
+    tagline: 'First in. Last out.',
+    stats: { health: 100, armor: 25, speed: 1.06, regen: 1.0, reload: 1.0, recoil: 0.9, damage: 1.0 },
+    passive: { id: 'steady', name: 'STEADY HANDS', desc: '+12% sniper damage and 22% less scope sway.' },
+    active: { id: 'blink', name: 'PHASE DASH', desc: 'Dash 12 meters forward with a brief window of damage immunity.', cooldown: 18, duration: 0.45 }
+  }
+];
+
 export const MODES = {
   br: {
     id: 'br', name: 'BATTLE ROYALE', tag: 'SOLO · 50 PLAYERS', desc: 'Drop in. Loot up. Outlast them all.',
@@ -210,6 +297,7 @@ export const DEFAULT_PROFILE = {
   coins: 12450,
   gems: 860,
   rank: 'HEROIC IV',
+  operator: 'phantom',
   outfit: 'street',
   skin: 's2',
   helmet: 'tactical',

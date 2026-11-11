@@ -89,7 +89,7 @@ export class Input {
     window.addEventListener('keydown', e => {
       if (!this.enabled) return;
       const k = e.code;
-      if (['Space', 'Tab', 'ControlLeft', 'ShiftLeft', 'KeyR', 'KeyF', 'KeyH', 'KeyJ', 'Digit1', 'Digit2', 'Digit3'].includes(k)) e.preventDefault();
+      if (['Space', 'Tab', 'ControlLeft', 'ShiftLeft', 'KeyR', 'KeyF', 'KeyH', 'KeyJ', 'KeyK', 'KeyL', 'KeyE', 'Digit1', 'Digit2', 'Digit3'].includes(k)) e.preventDefault();
       if (e.repeat) { this.keys.add(k); return; }
       this.keys.add(k);
       switch (k) {
@@ -99,6 +99,9 @@ export class Input {
         case 'KeyF': this.emit('interact'); break;
         case 'KeyH': this.emit('med'); break;
         case 'KeyJ': this.emit('shield'); break;
+        case 'KeyK': this.emit('bandage'); break;
+        case 'KeyL': this.emit('trauma'); break;
+        case 'KeyE': this.emit('ability'); break;
         case 'Digit1': this.emit('slot', 0); break;
         case 'Digit2': this.emit('slot', 1); break;
         case 'Digit3': this.emit('slot', 2); break;
@@ -226,6 +229,7 @@ export class Input {
     tap('t-crouch', () => { this.crouchToggle = !this.crouchToggle; this.emit('crouch', this.crouchToggle); });
     tap('t-reload', () => this.emit('reload'));
     tap('t-swap', () => this.emit('swap'));
+    tap('t-ability', () => this.emit('ability'));
     tap('t-sprint', el => { this.sprintToggle = !this.sprintToggle; el.classList.toggle('on', this.sprintToggle); });
     tap('t-interact', () => this.emit('interact'));
     // prevent iOS scroll / zoom gestures on HUD

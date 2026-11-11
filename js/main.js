@@ -8,14 +8,16 @@ import { Game } from './game.js';
 import { audio } from './audio.js';
 import {
   MODES, MAPS, MAP_ORDER, OUTFITS, SKINS, HELMETS, BACKPACKS,
-  WEAPONS, PRIMARY_IDS, SECONDARY_IDS, RARITY, QUALITY, DEFAULT_PROFILE
+  WEAPONS, PRIMARY_IDS, SECONDARY_IDS, RARITY, QUALITY, DEFAULT_PROFILE, OPERATORS
 } from './config.js';
 import {
   loadProfile, saveProfile, applyMatchResult, randomizeLook,
-  outfitOf, skinOf, helmetOf, backpackOf, tierForLevel
+  outfitOf, skinOf, helmetOf, backpackOf, tierForLevel, operatorOf
 } from './profile.js';
 import { createHumanoid } from './models.js';
-import { $, $$, drawMapPreview, drawWeaponIcon } from './utils.js';
+import { $, $$, clamp, drawMapPreview, drawWeaponIcon } from './utils.js';
+
+const clampPct = v => clamp(Number.isFinite(v) ? v : 0, 0, 100);
 
 const LOAD_STEPS = [
   [0.05, 'BOOTING BLAZE ENGINE'],
@@ -34,7 +36,7 @@ class App {
     this.hud = new HUD();
     this.game = null;
     this.activeTab = 'home';
-    this.charCategory = 'outfit';
+    this.charCategory = 'operator';
     this.loadoutSlot = 'primary';
     this.starting = false;
     this.loadingStep = 0;
@@ -258,13 +260,14 @@ class App {
     const old = this.lobby.avatar;
     if (old) this.lobby.avatarPivot.remove(old);
     const outfit = outfitOf(this.profile.outfit);
+    const op = operatorOf(this.profile.operator);
     const avatar = createHumanoid({
-      outfit: { top: outfit.top, pants: outfit.pants, accent: outfit.accent, vest: outfit.vest },
+      outfit: { top: outfit.top, pants: outfit.pants, accent: op.accent || outfit.accent, vest: outfit.vest },
       skin: skinOf(this.profile.skin).color,
       helmet: this.profile.helmet,
       backpack: this.profile.backpack,
       weapon: this.profile.primary,
-      accent: outfit.accent
+      accent: op.accent || outfit.accent
     });
     avatar.scale.setScalar(1.28);
     avatar.position.set(0, 0.02, 0);
@@ -500,7 +503,7 @@ class App {
       this.applyOutfitCache();
       this.refreshLobbyAvatar();
       this.syncProfileUI();
-      this.toast('OPERATOR RANDOMIZED', outfitOf(this.profile.outfit).name);
+      this.toast('OPERATOR RANDOMIZED', operatorOf(this.profile.operator).name);
     });
 
     // loadout slots
@@ -604,10 +607,12 @@ class App {
      ============================================================ */
   applyOutfitCache() {
     const o = outfitOf(this.profile.outfit);
+    const op = operatorOf(this.profile.operator);
     this.profile.outfitTop = o.top;
-    this.profile.outfitAccent = o.accent;
+    this.profile.outfitAccent = op.accent || o.accent;
     this.profile.outfitPants = o.pants;
     this.profile.outfitVest = o.vest;
+    this.profile.operatorAccent = op.accent;
     this.profile.rank = tierForLevel(this.profile.level) + ' ' + (this.profile.rank.includes('IV') ? 'IV' : '');
   }
 
@@ -728,6 +733,35 @@ class App {
     const host = $('#char-items');
     if (!host) return;
     const cat = this.charCategory;
+    if (cat === 'operator') {
+      const selected = this.profile.operator;
+      host.innerHTML = '';
+      for (const op of OPERATORS) {
+        const btn = document.createElement('button');
+        btn.className = 'char-item operator-card' + (op.id === selected ? ' active' : '');
+        btn.innerHTML = `
+          <span class="char-swatch operator-swatch" style="--op:${op.accent}">
+            <span class="op-figure"><i></i></span>
+            <b>${op.role}</b>
+          </span>
+          <span class="char-name">${op.name}</span>
+          <span class="char-rarity" style="color:${RARITY[op.rarity] || '#9aa8b3'}">${op.rarity}</span>
+          <span class="eq-badge"><svg class="icon"><use href="#i-check"/></svg></span>`;
+        btn.addEventListener('click', () => {
+          this.profile.operator = op.id;
+          saveProfile(this.profile);
+          this.applyOutfitCache();
+          this.refreshLobbyAvatar();
+          this.syncProfileUI();
+          this.toast('OPERATOR EQUIPPED', op.name + ' · ' + op.role);
+        });
+        host.appendChild(btn);
+      }
+      this.renderOperatorDetails();
+      return;
+    }
+    const det = $('#operator-details');
+    if (det) det.innerHTML = '';
     let items;
     if (cat === 'outfit') items = OUTFITS.map(o => ({ id: o.id, name: o.name, rarity: o.rarity, a: o.top, b: o.vest, c: o.accent, d: o.pants, kind: 'outfit' }));
     else if (cat === 'helmet') items = HELMETS.map(o => ({ id: o.id, name: o.name, rarity: o.rarity, a: o.color === 'none' ? '#2c333c' : o.color, b: '#151b22', c: '#ff7a1a', kind: 'gear' }));
@@ -762,6 +796,40 @@ class App {
       });
       host.appendChild(btn);
     }
+  }
+
+  renderOperatorDetails() {
+    const host = $('#operator-details');
+    if (!host) return;
+    const op = operatorOf(this.profile.operator);
+    const stat = (label, value, pct, color = 'var(--orange)') =>
+      `<div class="op-stat"><span>${label}</span><i><b style="width:${clampPct(pct)}%;background:${color}"></b></i><em>${value}</em></div>`;
+    host.innerHTML = `
+      <div class="operator-details" style="--op:${op.accent}">
+        <div class="op-head">
+          <span class="op-emblem"><svg class="icon"><use href="#i-user"/></svg></span>
+          <div><b>${op.name}</b><span>${op.role} · ${op.rarity}</span><i>${op.tagline}</i></div>
+          <span class="op-live">ACTIVE OPERATOR</span>
+        </div>
+        <div class="op-body">
+          <div class="op-stats">
+            ${stat('HEALTH', op.stats.health, op.stats.health / 1.4, '#52e6a0')}
+            ${stat('ARMOR', op.stats.armor, op.stats.armor / 0.7, '#4fd8ff')}
+            ${stat('MOBILITY', Math.round(op.stats.speed * 100) + '%', (op.stats.speed - 0.85) / 0.3 * 100, '#ffd166')}
+            ${stat('RECOIL', Math.round(op.stats.recoil * 100) + '%', (1.15 - op.stats.recoil) / 0.35 * 100, '#ff9d4a')}
+          </div>
+          <div class="op-skills">
+            <div class="op-skill active-skill">
+              <span class="skill-key">E</span>
+              <div><b>${op.active.name}</b><span>ACTIVE · ${op.active.cooldown}S COOLDOWN</span><i>${op.active.desc}</i></div>
+            </div>
+            <div class="op-skill passive-skill">
+              <span class="skill-key"><svg class="icon"><use href="#i-shield"/></svg></span>
+              <div><b>${op.passive.name}</b><span>PASSIVE</span><i>${op.passive.desc}</i></div>
+            </div>
+          </div>
+        </div>
+      </div>`;
   }
 
   renderLoadout() {

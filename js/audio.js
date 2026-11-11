@@ -112,7 +112,7 @@ export class AudioEngine {
   heal() { this.tone(420, 0.18, 'sine', 0.1, 620); this.tone(880, 0.2, 'sine', 0.06, 1200, 0.12); }
   shield() { this.tone(320, 0.25, 'triangle', 0.09, 780); this.tone(980, 0.3, 'sine', 0.05, 1400, 0.08); }
   land() { this.noiseBurst(280, 0.35, 0.3, 0.4, 'lowpass'); this.tone(55, 0.3, 'sine', 0.3, 28); }
-  step() { this.noiseBurst(260 + Math.random() * 120, 0.05, 0.05, 1.5, 'lowpass'); }
+  step(vol = 1) { this.noiseBurst(260 + Math.random() * 120, 0.05, 0.05 * vol, 1.5, 'lowpass'); }
   zone() { this.tone(440, 0.2, 'sine', 0.1); this.tone(330, 0.3, 'sine', 0.1, 280, 0.22); }
   warn() { this.tone(180, 0.18, 'triangle', 0.14, 140); this.tone(180, 0.18, 'triangle', 0.14, 140, 0.28); }
   airdrop() { this.tone(620, 0.15, 'triangle', 0.1); this.tone(830, 0.2, 'triangle', 0.1, 620, 0.16); }
@@ -128,6 +128,12 @@ export class AudioEngine {
     seq.forEach((f, i) => this.tone(f, 0.5, 'sine', 0.1, f * 0.94, i * 0.18));
   }
   click() { this.tone(780, 0.03, 'square', 0.035); }
+  ability() {
+    if (!this._ready()) return;
+    this.tone(300, 0.24, 'sine', 0.1, 760);
+    this.tone(600, 0.34, 'triangle', 0.08, 1200, 0.06);
+    this.noiseBurst(2400, 0.18, 0.1, 2.2, 'bandpass', 900);
+  }
 
   parachute() { this.noiseBurst(700, 0.6, 0.2, 0.4, 'lowpass', 300); }
 
